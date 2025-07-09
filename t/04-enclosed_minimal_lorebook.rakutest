@@ -1,0 +1,53 @@
+use Test;
+use LLM::Character::IO::Import;
+use LLM::Character::Lorebook;
+use LLM::Character::Lorebook::Entry;
+use JSON::Fast;
+
+plan 29;
+
+my $json = slurp "t/fixtures/lorebook_enclosed_minimal.json";
+my $lorebook = import-lorebook-json($json);
+
+ok $lorebook.defined, "lorebook_enclosed_minimal.json: lorebook is defined";
+
+# Check Lorebook fields
+isa-ok $lorebook, LLM::Character::Lorebook, "lorebook_enclosed_minimal.json: is Lorebook";
+ok $lorebook.entries.elems > 0, "lorebook_enclosed_minimal.json: has entries";
+ok $lorebook.extensions.defined, "lorebook_enclosed_minimal.json: extensions defined";
+
+# Check defaultable fields
+ok !$lorebook.name.defined || $lorebook.name ~~ Str, "lorebook_enclosed_minimal.json: name is str or undefined";
+ok !$lorebook.description.defined || $lorebook.description ~~ Str, "lorebook_enclosed_minimal.json: description is str or undefined";
+ok !$lorebook.scan_depth.defined || $lorebook.scan_depth ~~ Int, "lorebook_enclosed_minimal.json: scan_depth is int or undefined";
+ok !$lorebook.token_budget.defined || $lorebook.token_budget ~~ Int, "lorebook_enclosed_minimal.json: token_budget is int or undefined";
+ok !$lorebook.recursive_scanning.defined || $lorebook.recursive_scanning ~~ Bool, "lorebook_enclosed_minimal.json: recursive_scanning is bool or undefined";
+
+# Check Entry fields
+for $lorebook.entries.kv -> $i, $entry {
+    isa-ok $entry, LLM::Character::Lorebook::Entry, "lorebook_enclosed_minimal.json: entry $i is Entry";
+    ok $entry.keys.elems > 0, "lorebook_enclosed_minimal.json: entry $i has keys";
+    ok $entry.content.defined, "lorebook_enclosed_minimal.json: entry $i has content";
+    ok $entry.enabled ~~ Bool, "lorebook_enclosed_minimal.json: entry $i enabled is Bool";
+    ok $entry.insertion_order ~~ Int, "lorebook_enclosed_minimal.json: entry $i insertion_order is Int";
+    ok $entry.use_regex.defined, "lorebook_enclosed_minimal.json: entry $i use_regex is defined";
+
+    # Optional fields sanity check
+    ok !$entry.case_sensitive.defined || $entry.case_sensitive ~~ Bool, "lorebook_enclosed_minimal.json: entry $i case_sensitive sane";
+    ok !$entry.constant.defined || $entry.constant ~~ Bool, "lorebook_enclosed_minimal.json: entry $i constant sane";
+    ok !$entry.selective.defined || $entry.selective ~~ Bool, "lorebook_enclosed_minimal.json: entry $i selective sane";
+    ok !$entry.secondary_keys.defined || $entry.secondary_keys ~~ Array, "lorebook_enclosed_minimal.json: entry $i secondary_keys sane";
+    ok !$entry.priority.defined || $entry.priority ~~ Int, "lorebook_enclosed_minimal.json: entry $i priority sane";
+    ok !$entry.comment.defined || $entry.comment ~~ Str, "lorebook_enclosed_minimal.json: entry $i comment sane";
+    ok !$entry.position.defined || $entry.position ~~ Str, "lorebook_enclosed_minimal.json: entry $i position sane";
+    ok !$entry.extensions.defined || $entry.extensions ~~ Hash, "lorebook_enclosed_minimal.json: entry $i extensions sane";
+}
+
+# Check values.
+my $entry = $lorebook.entries[0];
+is $entry.keys[0], "foo", "lorebook_enclosed_minimal.json: correct first key";
+is $entry.keys[1], "bar", "lorebook_enclosed_minimal.json: correct second key";
+is $entry.content, "some content", "lorebook_enclosed_minimal.json: correct content";
+ok $entry.enabled, "lorebook_enclosed_minimal.json: correctly enabled";
+is $entry.insertion_order, 2, "lorebook_enclosed_minimal.json: correct insertion order";
+nok $entry.use_regex, "lorebook_enclosed_minimal.json: regex disabled correctly";

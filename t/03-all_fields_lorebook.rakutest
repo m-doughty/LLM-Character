@@ -1,0 +1,74 @@
+use Test;
+use LLM::Character::IO::Import;
+use LLM::Character::Lorebook;
+use LLM::Character::Lorebook::Entry;
+use JSON::Fast;
+
+plan 49;
+
+my $json = slurp "t/fixtures/lorebook_valid.json";
+my $lorebook = import-lorebook-json($json);
+
+ok $lorebook.defined, "lorebook_valid.json: lorebook is defined";
+
+# Check Lorebook fields
+isa-ok $lorebook, LLM::Character::Lorebook, "lorebook_valid.json: is Lorebook";
+ok $lorebook.entries.elems > 0, "lorebook_valid.json: has entries";
+ok $lorebook.extensions.defined, "lorebook_valid.json: extensions defined";
+
+# Check defaultable fields
+ok !$lorebook.name.defined || $lorebook.name ~~ Str, "lorebook_valid.json: name is str or undefined";
+ok !$lorebook.description.defined || $lorebook.description ~~ Str, "lorebook_valid.json: description is str or undefined";
+ok !$lorebook.scan_depth.defined || $lorebook.scan_depth ~~ Int, "lorebook_valid.json: scan_depth is int or undefined";
+ok !$lorebook.token_budget.defined || $lorebook.token_budget ~~ Int, "lorebook_valid.json: token_budget is int or undefined";
+ok !$lorebook.recursive_scanning.defined || $lorebook.recursive_scanning ~~ Bool, "lorebook_valid.json: recursive_scanning is bool or undefined";
+
+# Check Entry fields
+for $lorebook.entries.kv -> $i, $entry {
+    isa-ok $entry, LLM::Character::Lorebook::Entry, "lorebook_valid.json: entry $i is Entry";
+    ok $entry.keys.elems > 0, "lorebook_valid.json: entry $i has keys";
+    ok $entry.content.defined, "lorebook_valid.json: entry $i has content";
+    ok $entry.enabled ~~ Bool, "lorebook_valid.json: entry $i enabled is Bool";
+    ok $entry.insertion_order ~~ Int, "lorebook_valid.json: entry $i insertion_order is Int";
+    ok $entry.use_regex.defined, "lorebook_valid.json: entry $i use_regex is defined";
+
+    # Optional fields sanity check
+    ok !$entry.case_sensitive.defined || $entry.case_sensitive ~~ Bool, "lorebook_valid.json: entry $i case_sensitive sane";
+    ok !$entry.constant.defined || $entry.constant ~~ Bool, "lorebook_valid.json: entry $i constant sane";
+    ok !$entry.selective.defined || $entry.selective ~~ Bool, "lorebook_valid.json: entry $i selective sane";
+    ok !$entry.secondary_keys.defined || $entry.secondary_keys ~~ Array, "lorebook_valid.json: entry $i secondary_keys sane";
+    ok !$entry.priority.defined || $entry.priority ~~ Int, "lorebook_valid.json: entry $i priority sane";
+    ok !$entry.comment.defined || $entry.comment ~~ Str, "lorebook_valid.json: entry $i comment sane";
+    ok !$entry.position.defined || $entry.position ~~ Str, "lorebook_valid.json: entry $i position sane";
+    ok !$entry.extensions.defined || $entry.extensions ~~ Hash, "lorebook_valid.json: entry $i extensions sane";
+}
+
+# Check values.
+is $lorebook.name, "Test Lorebook", "lorebook_valid.json: correct lorebook name";
+is $lorebook.description, "This is a test", "lorebook_valid.json: correct lorebook description";
+is $lorebook.scan_depth, 2, "lorebook_valid.json: correct scan depth";
+is $lorebook.token_budget, 4096, "lorebook_valid.json: correct token budget";
+ok $lorebook.recursive_scanning, "lorebook_valid.json: correct recursive scanning";
+is $lorebook.extensions<testString>, "string", "lorebook_valid.json: correct extension 'testString'";
+nok $lorebook.extensions<testBool>, "lorebook_valid.json: correct extension 'testBool'";
+is $lorebook.extensions<testInt>, 16, "lorebook_valid.json: correct extension 'testInt'";
+
+my $entry = $lorebook.entries[0];
+is $entry.keys[0], "foo", "lorebook_valid.json: correct first key";
+is $entry.keys[1], "bar", "lorebook_valid.json: correct second key";
+is $entry.content, "some content", "lorebook_valid.json: correct content";
+is $entry.extensions<testString>, "string", "lorebook_valid.json: correct entry extension 'testString'";
+nok $entry.extensions<testBool>, "lorebook_valid.json: correct entry extension 'testBool'";
+is $entry.extensions<testInt>, 16, "lorebook_valid.json: correct entry extension 'testInt'";
+ok $entry.enabled, "lorebook_valid.json: correctly enabled";
+is $entry.insertion_order, 2, "lorebook_valid.json: correct insertion order";
+ok $entry.case_sensitive, "lorebook_valid.json: correct case sensitive";
+nok $entry.use_regex, "lorebook_valid.json: regex disabled correctly";
+nok $entry.constant, "lorebook_valid.json: constant correctly false";
+is $entry.name, "baz", "lorebook_valid.json: name correctly baz";
+is $entry.priority, 1, "lorebook_valid.json: correct entry priority";
+is $entry.id, 0, "lorebook_valid.json: correct entry id";
+is $entry.comment, "some comment", "lorebook.json: correct entry comment";
+ok $entry.selective, "lorebook_valid.json: entry correctly set to selective";
+is $entry.secondary_keys[0], "baz", "lorebook_valid.json: correct entry secondary key";
+is $entry.position, "before_char", "lorebook_valid.json: correct entry position";

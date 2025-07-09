@@ -1,0 +1,14 @@
+use Test;
+use JSON::Fast;
+use LLM::Character::IO::Import;
+
+plan 5;
+
+my $json = slurp "t/fixtures/character_with_book.json";
+my $card = import-character-json($json);
+
+isa-ok $card, LLM::Character::Card, 'Got a character card';
+is $card.name, "Assistant", 'Correct name';
+ok $card.character_book.defined, 'Lorebook is present';
+is $card.character_book.entries.elems, 1, 'One lorebook entry';
+is $card.assets.elems, 1, 'One asset present';

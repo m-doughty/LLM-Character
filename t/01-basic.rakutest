@@ -1,0 +1,6 @@
+use Test;
+use LLM::Character;
+
+pass "replace me";
+
+done-testing;

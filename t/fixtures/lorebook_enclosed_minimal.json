@@ -1,0 +1,16 @@
+{
+	"spec": "lorebook_v3",
+	"data": {
+		"extensions": {},
+		"entries": [
+			{
+				"keys": ["foo", "bar"],
+				"content": "some content",
+				"extensions": {},
+				"enabled": true,
+				"insertion_order": 2,
+				"use_regex": false
+			}
+		]
+	}
+}

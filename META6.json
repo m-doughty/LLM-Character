@@ -1,0 +1,39 @@
+{
+  "auth": "zef:apogee",
+  "authors": [
+    "Matt Doughty"
+  ],
+  "build-depends": [
+  ],
+  "depends": [
+    "Base64::Native",
+    "Image::PNG::Portable",
+    "JSON::Fast",
+    "RegexUtils",
+    "UUID::V4"
+  ],
+  "description": "Import CCv3 character cards & import and match lorebooks.",
+  "license": "Artistic-2.0",
+  "name": "LLM::Character",
+  "perl": "6.d",
+  "provides": {
+    "LLM::Character": "lib/LLM/Character.rakumod",
+    "LLM::Character::Asset": "lib/LLM/Character/Asset.rakumod",
+    "LLM::Character::Card": "lib/LLM/Character/Card.rakumod",
+    "LLM::Character::IO::Import": "lib/LLM/Character/IO/Import.rakumod",
+    "LLM::Character::Lorebook": "lib/LLM/Character/Lorebook.rakumod",
+    "LLM::Character::Lorebook::Entry": "lib/LLM/Character/Lorebook/Entry.rakumod",
+    "LLM::Character::Lorebook::Matching": "lib/LLM/Character/Lorebook/Matching.rakumod",
+    "LLM::Character::Lorebook::Matching::Node": "lib/LLM/Character/Lorebook/Matching/Node.rakumod",
+    "LLM::Character::Lorebook::Matching::Regex": "lib/LLM/Character/Lorebook/Matching/Regex.rakumod",
+    "LLM::Character::Lorebook::Matching::Trie": "lib/LLM/Character/Lorebook/Matching/Trie.rakumod"
+  },
+  "resources": [
+  ],
+  "source-url": "https://github.com/m-doughty/LLM-Character.git",
+  "tags": [
+  ],
+  "test-depends": [
+  ],
+  "version": "0.1.0"
+}

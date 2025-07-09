@@ -1,0 +1,14 @@
+use Test;
+use JSON::Fast;
+use LLM::Character::IO::Import;
+
+plan 5;
+
+my $json = slurp "t/fixtures/character_enclosed.json";
+my $card = import-character-json($json);
+
+isa-ok $card, LLM::Character::Card, 'Got a character card';
+is $card.name, "Assistant", 'Correct name';
+is $card.description, '{{char}} is a helpful assistant.', 'Correct description';
+ok $card.extensions<talkativeness>:exists, 'Extension talkativeness present';
+ok $card.extensions<fav>:exists, 'Extension fav present';

@@ -1,0 +1,63 @@
+use Test;
+use LLM::Character::Lorebook::Entry;
+use LLM::Character::Lorebook::Matching;
+
+plan 2;
+
+subtest "Basic trie building" => {
+    my $e1 = LLM::Character::Lorebook::Entry.new(
+        uuid => "1", keys => ["foo"], content => "foo!", case_sensitive => True, enabled => True
+    );
+    my $e2 = LLM::Character::Lorebook::Entry.new(
+        uuid => "2", keys => ["foal"], content => "foal!", case_sensitive => True, enabled => True
+    );
+    my $e3 = LLM::Character::Lorebook::Entry.new(
+        uuid => "3", keys => ["food"], content => "food!", case_sensitive => True, enabled => True
+    );
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e1, $e2, $e3]);
+
+    my $root = $matcher.case_sensitive.root;
+
+    # Check that children exist
+    ok $root.children{'f'}, "Root has 'f' child";
+    my $f = $root.children{'f'};
+    ok $f.children{'o'}, "'f' node has 'o' child";
+    my $o = $f.children{'o'};
+    ok $o.children{'o'}, "'f'→'o' has 'o' child";
+    ok $o.children{'a'}, "'f'→'o' has 'a' child";
+
+    # Check outputs at terminal nodes
+    my $foo_terminal = $o.children{'o'};
+    my $foal_a = $o.children{'a'};
+    my $foal_l = $foal_a.children{'l'};
+
+    is $foo_terminal.outputs.elems, 1, "'foo' terminal node has one output";
+    is $foo_terminal.outputs[0].uuid, "1", "'foo' entry output is correct";
+    is $foal_l.outputs[0].uuid, "2", "'foal' entry output is correct";
+}
+
+subtest "Regex and constant handling" => {
+    my $const = LLM::Character::Lorebook::Entry.new(
+        uuid => "c", keys => [], content => "Always here", constant => True, enabled => True
+    );
+    my $regex = LLM::Character::Lorebook::Entry.new(
+        uuid => "r", keys => ["/^bar.*/"], content => "Bar!", use_regex => True, enabled => True
+    );
+    my $regexflags = LLM::Character::Lorebook::Entry.new(
+        uuid => "rf", keys => ["/^bar.*/i"], content => "Bar!", use_regex => True, enabled => True
+    );
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$const, $regex, $regexflags]);
+
+    is $matcher.constant_entries.elems, 1, "Constant entries list has 1";
+    is $matcher.constant_entries[0].uuid, "c", "Constant entry uuid matches";
+
+    is $matcher.regex_entries.elems, 2, "Regex entries list has 2";
+    is $matcher.regex_entries[0].output.uuid, "r", "Regex entry uuid matches";
+    ok $matcher.regex_entries[0].regex ~~ Regex, "Regex was compiled";
+    ok "barrister" ~~ $matcher.regex_entries[0].regex, "Regex matches";
+
+    is $matcher.regex_entries[1].output.uuid, "rf", "Regex with flags entry uuid matches";
+    ok $matcher.regex_entries[1].regex ~~ Regex, "Regex with flags was compiled";
+    ok "BARRISTER" ~~ $matcher.regex_entries[1].regex, "Regex with flags is case-insensitive";
+}
+

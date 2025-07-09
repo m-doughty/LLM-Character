@@ -1,0 +1,45 @@
+use Test;
+use LLM::Character::IO::Import;
+use LLM::Character::Lorebook;
+use LLM::Character::Lorebook::Entry;
+use JSON::Fast;
+
+plan 79;
+
+my $json = slurp "t/fixtures/st_lorebook.json";
+my $lorebook = import-lorebook-json($json);
+
+ok $lorebook.defined, "st_lorebook.json: lorebook is defined";
+
+# Check Lorebook fields
+isa-ok $lorebook, LLM::Character::Lorebook, "st_lorebook.json: is Lorebook";
+ok $lorebook.entries.elems > 0, "st_lorebook.json: has entries";
+ok $lorebook.extensions.defined, "st_lorebook.json: extensions defined";
+
+# Check defaultable fields
+ok !$lorebook.name.defined || $lorebook.name ~~ Str, "st_lorebook.json: name is str or undefined";
+ok !$lorebook.description.defined || $lorebook.description ~~ Str, "st_lorebook.json: description is str or undefined";
+ok !$lorebook.scan_depth.defined || $lorebook.scan_depth ~~ Int, "st_lorebook.json: scan_depth is int or undefined";
+ok !$lorebook.token_budget.defined || $lorebook.token_budget ~~ Int, "st_lorebook.json: token_budget is int or undefined";
+ok !$lorebook.recursive_scanning.defined || $lorebook.recursive_scanning ~~ Bool, "st_lorebook.json: recursive_scanning is bool or undefined";
+
+# Check Entry fields
+for $lorebook.entries.kv -> $i, $entry {
+    isa-ok $entry, LLM::Character::Lorebook::Entry, "st_lorebook.json: entry $i is Entry";
+    ok $entry.keys.elems > 0 || $entry.constant, "st_lorebook.json: entry $i has keys or is constant";
+    ok $entry.content.defined, "st_lorebook.json: entry $i has content";
+    ok $entry.enabled ~~ Bool, "st_lorebook.json: entry $i enabled is Bool";
+    ok $entry.insertion_order ~~ Int, "st_lorebook.json: entry $i insertion_order is Int";
+    ok $entry.use_regex.defined, "st_lorebook.json: entry $i use_regex is defined";
+
+    # Optional fields sanity check
+    ok !$entry.case_sensitive.defined || $entry.case_sensitive ~~ Bool, "st_lorebook.json: entry $i case_sensitive sane";
+    ok !$entry.constant.defined || $entry.constant ~~ Bool, "st_lorebook.json: entry $i constant sane";
+    ok !$entry.selective.defined || $entry.selective ~~ Bool, "st_lorebook.json: entry $i selective sane";
+    ok !$entry.secondary_keys.defined || $entry.secondary_keys ~~ Array, "st_lorebook.json: entry $i secondary_keys sane";
+    ok !$entry.priority.defined || $entry.priority ~~ Int, "st_lorebook.json: entry $i priority sane";
+    ok !$entry.comment.defined || $entry.comment ~~ Str, "st_lorebook.json: entry $i comment sane";
+    ok !$entry.position.defined || $entry.position ~~ Str, "st_lorebook.json: entry $i position sane";
+    ok !$entry.extensions.defined || $entry.extensions ~~ Hash, "st_lorebook.json: entry $i extensions sane";
+}
+

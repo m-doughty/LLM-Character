@@ -1,0 +1,135 @@
+use Test;
+use LLM::Character::Lorebook::Entry;
+use LLM::Character::Lorebook::Matching;
+
+sub mkentry (*%opts) { LLM::Character::Lorebook::Entry.new(|%opts) }
+
+plan 12;
+
+# 1. Basic single match
+subtest "Single keyword match" => {
+    my $e = mkentry(:uuid<1>, :keys['cat'], :content('Cat!'), :case_sensitive(True), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e]);
+    my @matches = $matcher.match("the cat sat");
+    is @matches.elems, 1, "Single match";
+    is @matches[0].uuid, "1", "UUID correct";
+}
+
+# 2. Multiple matches in one pass
+subtest "Multiple keywords, one pass" => {
+    my $e1 = mkentry(:uuid<1>, :keys['cat'], :content('Cat!'), :case_sensitive(True), :enabled(True));
+    my $e2 = mkentry(:uuid<2>, :keys['dog'], :content('Dog!'), :case_sensitive(True), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e1, $e2]);
+    my @matches = $matcher.match("cat and dog");
+    is @matches».uuid.sort, <1 2>, "Both matches found";
+}
+
+# 3. Case sensitivity
+subtest "Case-insensitive key matches any case" => {
+    my $e = mkentry(:uuid<1>, :keys['fish'], :content('Fish!'), :case_sensitive(False), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e]);
+    ok $matcher.match("FISH are swimming").elems, "Insensitive match (all upper)";
+    ok $matcher.match("FiShy business").elems, "Insensitive match (mixed)";
+    nok $matcher.match("shark attack").elems, "No match on unrelated word";
+}
+
+# 4. Regex key matches
+subtest "Regex entry matches and respects flags" => {
+    my $e1 = mkentry(:uuid<1>, :keys['/^bar/'], :content('Bar!'), :use_regex(True), :enabled(True));
+    my $e2 = mkentry(:uuid<2>, :keys['/^baz/i'], :content('Baz!'), :use_regex(True), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e1, $e2]);
+    ok $matcher.match("bartender").elems, "Regex matches start of line";
+    ok $matcher.match("BAZINGA").elems, "Regex with /i matches";
+    nok $matcher.match("tar").elems, "No regex match on non-bar/baz";
+}
+
+# 5. Constant entries always present
+subtest "Constant entries always included" => {
+    my $e1 = mkentry(:uuid<1>, :keys['a'], :content('A!'), :case_sensitive(True), :enabled(True));
+    my $const = mkentry(:uuid<2>, :content('Const!'), :constant(True), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e1, $const]);
+    my @matches = $matcher.match("b");
+    is @matches[0].uuid, 2, "Only constant present when no match";
+    @matches = $matcher.match("a");
+    is @matches».uuid.sort, <1 2>, "Constant plus normal match";
+}
+
+# 6. Selective entries require both keys
+subtest "Selective entry: needs primary & secondary" => {
+    my $e = mkentry(:uuid<3>, :keys['wolf'], :secondary_keys(['forest']), :selective(True), :content('Wolf in Forest!'), :case_sensitive(True), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e]);
+    ok $matcher.match("wolf in the forest").elems, "Both keys present (fires)";
+    nok $matcher.match("wolf pack"), "Only primary, not selective";
+    nok $matcher.match("the forest is dark"), "Only selective, not primary";
+}
+
+# 7. exclude_recursion: match only on first pass
+subtest "exclude_recursion: only pass 0" => {
+    my $e = mkentry(:uuid<1>, :keys['bat'], :content('Bat!'), :extensions({ exclude_recursion => True }), :case_sensitive(True), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e]);
+    my @matches = $matcher.match("bat", 2, :recursive_scanning(True));
+    is @matches.elems, 1, "Matches on pass 0";
+    is @matches[0].uuid, "1", "Correct entry";
+}
+
+# 8. delay_until_recursion: only after first pass
+subtest "delay_until_recursion: only pass > 0" => {
+    my $e = mkentry(:uuid<1>, :keys['bat'], :content('Bat!'), :extensions({ delay_until_recursion => True }), :case_sensitive(True), :enabled(True));
+    my $e2 = mkentry(:uuid<2>, :keys['Bat!'], :content('batsong'), :case_sensitive(True), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e, $e2]);
+    my @matches = $matcher.match("Bat!", 2, :recursive_scanning(True));
+    is-deeply @matches».uuid.sort, <1 2>, "delay_until_recursion only fires after pass 0";
+}
+
+# 9. prevent_recursion: does not add content to next pass
+subtest "prevent_recursion: no content added for recursion" => {
+    my $e1 = mkentry(:uuid<1>, :keys['owl'], :content('Who?'), :extensions({ prevent_recursion => True }), :case_sensitive(True), :enabled(True));
+    my $e2 = mkentry(:uuid<2>, :keys['Who?'], :content('Echo'), :case_sensitive(True), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e1, $e2]);
+    my @matches = $matcher.match("owl", 2, :recursive_scanning(True));
+    is @matches».uuid.sort, <1>, "Second entry not matched due to prevent_recursion";
+}
+
+# 10. Recursion: multi-pass finds
+subtest "Recursive matching up to scan_depth" => {
+    my $e1 = mkentry(:uuid<1>, :keys['bat'], :content('Batcave'), :case_sensitive(True), :enabled(True));
+    my $e2 = mkentry(:uuid<2>, :keys['Batcave'], :content('Cave echo'), :case_sensitive(True), :enabled(True));
+    my $e3 = mkentry(:uuid<3>, :keys['echo'], :content('Hello!'), :case_sensitive(True), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e1, $e2, $e3]);
+    my @matches = $matcher.match("bat", 5, :recursive_scanning(True));
+    is @matches».uuid.sort, <1 2 3>, "All found through recursive scan";
+}
+
+# 11. No duplicates
+subtest "No duplicate matches" => {
+    my $e = mkentry(:uuid<1>, :keys['repeat'], :content('Repeat!'), :case_sensitive(False), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e]);
+    my @matches = $matcher.match("repeat repeat repeat");
+    is @matches.elems, 1, "Entry matched only once";
+}
+
+# 12. Edge cases: empty haystack, empty keys, disabled, overlapping keys
+subtest "Edge cases" => {
+    # Empty haystack
+    my $e = mkentry(:uuid<1>, :keys['x'], :content('X!'), :case_sensitive(True), :enabled(True));
+    my $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e]);
+    is $matcher.match("").elems, 0, "No match on empty haystack";
+
+    # Empty keys
+    my $e2 = mkentry(:uuid<2>, :keys[], :content('Y!'), :case_sensitive(True), :enabled(True));
+    $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e2]);
+    is $matcher.match("anything").elems, 0, "No match on empty keys";
+
+    # Disabled
+    my $e3 = mkentry(:uuid<3>, :keys['z'], :content('Z!'), :case_sensitive(True), :enabled(False));
+    $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e3]);
+    is $matcher.match("z").elems, 0, "No match if not enabled";
+
+    # Overlapping keys
+    my $e4 = mkentry(:uuid<4>, :keys['foo'], :content('foo!'), :case_sensitive(True), :enabled(True));
+    my $e5 = mkentry(:uuid<5>, :keys['food'], :content('food!'), :case_sensitive(True), :enabled(True));
+    $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e4, $e5]);
+    my @matches = $matcher.match("food");
+    is-deeply @matches».uuid.sort, <4 5>, "Both 'foo' and 'food' matched";
+}
+

@@ -1,0 +1,25 @@
+use Test;
+use LLM::Character;
+use LLM::Character::Card;
+use LLM::Character::Lorebook;
+
+plan 10;
+
+my $c = LLM::Character.new;
+
+my $lore = $c.import-lorebook("t/fixtures/lorebook_valid.json");
+isa-ok $lore, LLM::Character::Lorebook, "correctly imports a lorebook";
+is $lore.name, "Test Lorebook", "correctly populates lorebook name";
+is $lore.entries[0].content, "some content", "correctly populates lorebook entry";
+
+my $char = $c.import-character("t/fixtures/character_with_book.json");
+isa-ok $char, LLM::Character::Card, "correctly imports a character";
+is $char.name, "Assistant", "correctly populates character name";
+isa-ok $char.character_book, LLM::Character::Lorebook, "correctly populates character lorebook";
+is $char.character_book.entries[0].keys[0], "foo", "correctly populates lorebook keys";
+
+my $png_char = $c.import-character("t/fixtures/Assistant.png");
+isa-ok $png_char, LLM::Character::Card, "correctly imports character from PNG";
+is $png_char.name, "Assistant", "correctly populates character name from PNG";
+is $png_char.first_mes, "How can I help?", "correctly populates first message from PNG";
+
