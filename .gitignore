@@ -80,3 +80,5 @@ __pycache__/
 *.dSYM/
 *.pkg/
 
+# === Package ===
+LLM-Character-*
