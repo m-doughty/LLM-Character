@@ -1,4 +1,4 @@
-[![Actions Status](https://github.com/m-doughty/LLM-Character/actions/workflows/linux.yml/badge.svg)](https://github.com/m-doughty/LLM-Character/actions) [![Actions Status](https://github.com/m-doughty/LLM-Character/actions/workflows/windows.yml/badge.svg)](https://github.com/m-doughty/LLM-Character/actions) [![Actions Status](https://github.com/m-doughty/LLM-Character/actions/workflows/macos.yml/badge.svg)](https://github.com/m-doughty/LLM-Character/actions)
+[![Actions Status](https://github.com/m-doughty/LLM-Character/actions/workflows/test.yml/badge.svg)](https://github.com/m-doughty/LLM-Character/actions)
 
 NAME
 ====

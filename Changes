@@ -2,5 +2,8 @@ Revision history for LLM::Character
 
 {{$NEXT}}
 
+0.1.1  2025-07-09T19:36:38+01:00
+    - Fix actions badges
+
 0.1.0  2025-07-09T19:29:36+01:00
     - Initial version
