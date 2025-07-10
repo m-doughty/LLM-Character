@@ -138,6 +138,8 @@ sub _coerce-entry(%e --> LLM::Character::Lorebook::Entry) {
 	my @clean = @lines.grep({ !/^'@@'/ && !/^'@@@'/ });
 	@decorators = @lines.grep({ /^'@@'/ || /^'@@@'/ });
 
+	my $selective = %e<selective>.defined && %e<selective> && %e<secondary_keys>.elems > 0;
+
 	LLM::Character::Lorebook::Entry.new(
 		uuid           => uuid-v4,
 		keys           => %e<keys> // [],
@@ -154,7 +156,7 @@ sub _coerce-entry(%e --> LLM::Character::Lorebook::Entry) {
 		id             => %e<id> // '',
 		comment        => %e<comment> // '',
 		priority       => %e<priority> // 0,
-		selective      => %e<selective> // False,
+		selective      => $selective,
 		position       => %e<position> // 'after_char',
 	);
 }
@@ -173,7 +175,9 @@ sub _coerce-st-entry(%e --> LLM::Character::Lorebook::Entry) {
 	%ext<delay_until_recursion> = %ext<delayUntilRecursion> if %ext<delayUntilRecursion>.defined;
 	%ext<exclude_recursion>     = %ext<excludeRecursion>    if %ext<excludeRecursion>.defined;
 
-	my $selective = %e<selective> && %e<selectiveLogic>.defined && %e<selectiveLogic> > 0;
+	my $selective = %e<selective> && %e<selectiveLogic>.defined && %e<selectiveLogic> == 1
+		?? True
+		!! False;
 
 	LLM::Character::Lorebook::Entry.new(
 		uuid            => uuid-v4,

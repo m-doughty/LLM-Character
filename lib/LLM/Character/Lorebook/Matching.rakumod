@@ -121,7 +121,6 @@ method match(Str $haystack, Int $recursion_depth = 99, Bool :$recursive_scanning
 			%this_pass{$entry.uuid} = $entry;
 		}
 
-
 		my @new_matches = %this_pass.keys
 			.grep({ %this_pass{$_}.defined })
 			.grep({ %this_pass{$_}.selective ?? %this_pass_selective{$_}.defined !! True })
