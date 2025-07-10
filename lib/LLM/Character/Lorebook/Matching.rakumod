@@ -11,7 +11,7 @@ has LLM::Character::Lorebook::Matching::Trie  $.case_insensitive;
 has LLM::Character::Lorebook::Matching::Trie  $.case_sensitive_selective;
 has LLM::Character::Lorebook::Matching::Trie  $.case_insensitive_selective;
 has LLM::Character::Lorebook::Matching::Regex @.regex_entries;
-has LLM::Character::Lorebook::Entry		   @.constant_entries;
+has LLM::Character::Lorebook::Entry           @.constant_entries;
 
 method build-matcher(@entries, Bool :$default_cs = False) {
 	my $cs_trie  = LLM::Character::Lorebook::Matching::Trie.new(
@@ -121,10 +121,12 @@ method match(Str $haystack, Int $recursion_depth = 99, Bool :$recursive_scanning
 			%this_pass{$entry.uuid} = $entry;
 		}
 
+
 		my @new_matches = %this_pass.keys
 			.grep({ %this_pass{$_}.defined })
 			.grep({ %this_pass{$_}.selective ?? %this_pass_selective{$_}.defined !! True })
 			.map({ %this_pass{$_} });
+
 		last unless @new_matches.elems;
 
 		%matched{$_.uuid} = $_ for @new_matches;

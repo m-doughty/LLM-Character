@@ -173,6 +173,8 @@ sub _coerce-st-entry(%e --> LLM::Character::Lorebook::Entry) {
 	%ext<delay_until_recursion> = %ext<delayUntilRecursion> if %ext<delayUntilRecursion>.defined;
 	%ext<exclude_recursion>     = %ext<excludeRecursion>    if %ext<excludeRecursion>.defined;
 
+	my $selective = %e<selective> && %e<selectiveLogic>.defined && %e<selectiveLogic> > 0;
+
 	LLM::Character::Lorebook::Entry.new(
 		uuid            => uuid-v4,
 		keys            => %e<key> // [],
@@ -188,7 +190,7 @@ sub _coerce-st-entry(%e --> LLM::Character::Lorebook::Entry) {
 		id              => %e<uid> // %e<id>,
 		comment         => %e<comment> // '',
 		priority        => %e<priority> // 0,
-		selective       => %e<selective> // False,
+		selective       => $selective,
 		position        => _convert-st-position(%e<position>),
 	);
 }

@@ -2,6 +2,9 @@ Revision history for LLM::Character
 
 {{$NEXT}}
 
+0.1.2  2025-07-10T02:18:40+01:00
+    - Fix bug with ST lorebooks always being selective
+
 0.1.1  2025-07-09T19:36:38+01:00
     - Fix actions badges
 
