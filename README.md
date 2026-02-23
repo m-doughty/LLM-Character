@@ -18,6 +18,12 @@ my $lorebook  = $c.import-lorebook('t/fixtures/lorebook_minimal.json');
 my $character = $c.import-character('t/fixtures/character.json');
 my $pngchar   = $c.import-character('t/fixtures/Assistant.png');
 
+# Export character & lorebook
+$c.export-character($character, 'output.json');
+$c.export-character-to-png($character, 'source.png', 'output.png');
+$c.export-lorebook($lorebook, 'lorebook.json');
+$c.export-lorebook($lorebook, 'lorebook_st.json', format => 'st');
+
 # Get lorebook entries which match an input
 my $m       = LLM::Character::Lorebook::Matching.build-matcher($lorebook.entries);
 my $input   = "foo bar baz";
@@ -27,7 +33,7 @@ my @matches = $m.match($input);
 STATUS
 ------
 
-This module aims to implement the most common functionality of the Character Card V2/V3 spec, including importing SillyTavern character cards and their embedded lorebooks.
+This module aims to implement the most common functionality of the Character Card V2/V3 spec, including importing and exporting SillyTavern character cards and their embedded lorebooks.
 
 Fast aho-corasick based lorebook matching is implemented for the following:
 
@@ -60,6 +66,18 @@ Imports a character from JSON or PNG at $file (the file extension must be correc
 ### .import-lorebook(Str:D $file)
 
 Imports a stand-alone JSON lorebook in ST or CCv3 format from $file
+
+### .export-character(Card:D $card, Str:D $file)
+
+Exports a character card to $file as CCv3 JSON (file must have .json extension)
+
+### .export-character-to-png(Card:D $card, Str:D $source-png, Str:D $output-png)
+
+Exports a character card to a PNG file, embedding the CCv3 JSON as base64 in both `ccv3` and `chara` tEXt chunks. Requires a source PNG to use as the image.
+
+### .export-lorebook(Lorebook:D $lorebook, Str:D $file, Str :$format = 'ccv3')
+
+Exports a lorebook to $file. Set `:format<st>` for SillyTavern format, defaults to CCv3.
 
 LLM::Character::Lorebook::Matching
 ----------------------------------

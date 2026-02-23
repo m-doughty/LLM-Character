@@ -1,6 +1,8 @@
 Revision history for LLM::Character
 
 {{$NEXT}}
+
+0.2.1  2026-02-23T04:03:54Z
     - Add export-character & export-character-to-png methods for exporting cards to JSON and PNG
     - Add export-lorebook method with CCv3 and SillyTavern format support
     - PNG export writes both ccv3 and chara tEXt chunks for CCv2 backwards compatibility
