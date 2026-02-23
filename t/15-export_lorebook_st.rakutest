@@ -1,0 +1,54 @@
+use Test;
+use JSON::Fast;
+use LLM::Character::IO::Import;
+use LLM::Character::IO::Export;
+use LLM::Character::Lorebook;
+use LLM::Character::Lorebook::Entry;
+
+plan 22;
+
+# Import ST lorebook
+my $json = slurp "t/fixtures/st_lorebook.json";
+my $lorebook = import-lorebook-json($json);
+
+# Export to ST JSON
+my $exported = export-lorebook-st-json($lorebook);
+ok $exported.defined, 'Export produces output';
+
+my %parsed = from-json($exported);
+
+# Verify entries is a Hash with string keys
+ok %parsed<entries> ~~ Hash, 'Entries is a Hash';
+ok %parsed<entries>.keys.all ~~ Str, 'All entry keys are strings';
+is %parsed<entries>.elems, 5, 'Five entries';
+
+# Verify first entry (Scenario [Constant])
+my %e0 = %parsed<entries><0>;
+ok %e0.defined, 'Entry 0 exists';
+is %e0<uid>, 0, 'uid field (renamed from id)';
+ok %e0<key> ~~ Array, 'key field is array (renamed from keys)';
+ok %e0<keysecondary> ~~ Array, 'keysecondary field is array (renamed from secondary_keys)';
+is %e0<order>, 100, 'order field (renamed from insertion_order)';
+nok %e0<disable>, 'disable field (negated from enabled)';
+is %e0<position>, 0, 'position is int (before_char = 0)';
+ok %e0<constant>, 'constant preserved';
+is %e0<comment>, 'Scenario [Constant]', 'comment preserved';
+is %e0<content>, 'scenario', 'content preserved';
+
+# Verify preventRecursion camelCase field
+ok %e0<preventRecursion>.defined, 'preventRecursion field present';
+ok %e0<preventRecursion>, 'preventRecursion is true for entry 0';
+
+# Verify entry 3 has preventRecursion false
+my %e3 = %parsed<entries><3>;
+nok %e3<preventRecursion>, 'preventRecursion is false for entry 3';
+
+# Verify entry 4 (Non-Constant, has keys)
+my %e4 = %parsed<entries><4>;
+is-deeply %e4<key>, ['foo', 'bar'], 'Entry 4 key array correct';
+nok %e4<constant>, 'Entry 4 not constant';
+is %e4<content>, 'baz', 'Entry 4 content correct';
+
+# Verify no CCv3-only field names leaked through
+ok !%e0<keys>.defined, 'No keys field (should be key)';
+ok !%e0<insertion_order>.defined, 'No insertion_order field (should be order)';

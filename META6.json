@@ -20,6 +20,7 @@
     "LLM::Character": "lib/LLM/Character.rakumod",
     "LLM::Character::Asset": "lib/LLM/Character/Asset.rakumod",
     "LLM::Character::Card": "lib/LLM/Character/Card.rakumod",
+    "LLM::Character::IO::Export": "lib/LLM/Character/IO/Export.rakumod",
     "LLM::Character::IO::Import": "lib/LLM/Character/IO/Import.rakumod",
     "LLM::Character::Lorebook": "lib/LLM/Character/Lorebook.rakumod",
     "LLM::Character::Lorebook::Entry": "lib/LLM/Character/Lorebook/Entry.rakumod",
@@ -35,5 +36,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.1.3"
+  "version": "0.2.0"
 }

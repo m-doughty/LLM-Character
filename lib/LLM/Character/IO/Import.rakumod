@@ -167,13 +167,19 @@ sub _coerce-st-entry(%e --> LLM::Character::Lorebook::Entry) {
 	my @clean = @lines.grep({ !/^'@@'/ && !/^'@@@'/ });
 	@decorators = @lines.grep({ /^'@@'/ || /^'@@@'/ });
 
-	my %known = <key keysecondary content disable order use_regex constant name id comment priority selective position preventRecursion delayUntilRecursion excludeRecursion>.
+	my %known = <key keysecondary content disable order use_regex constant name id comment priority selective position>.
 		map({ $_ => 1 }).Hash;
 
 	my %ext = %e.grep({ !(%known{.key}:exists) }).Hash;
-	%ext<prevent_recursion>     = %ext<preventRecursion>    if %ext<preventRecursion>.defined;
-	%ext<delay_until_recursion> = %ext<delayUntilRecursion> if %ext<delayUntilRecursion>.defined;
-	%ext<exclude_recursion>     = %ext<excludeRecursion>    if %ext<excludeRecursion>.defined;
+	if %ext<preventRecursion>.defined {
+		%ext<prevent_recursion> = %ext<preventRecursion>:delete;
+	}
+	if %ext<delayUntilRecursion>.defined {
+		%ext<delay_until_recursion> = %ext<delayUntilRecursion>:delete;
+	}
+	if %ext<excludeRecursion>.defined {
+		%ext<exclude_recursion> = %ext<excludeRecursion>:delete;
+	}
 
 	my $selective = %e<selective> && %e<selectiveLogic>.defined && %e<selectiveLogic> == 1
 		?? True

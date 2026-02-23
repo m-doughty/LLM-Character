@@ -1,0 +1,56 @@
+use Test;
+use JSON::Fast;
+use LLM::Character::IO::Import;
+use LLM::Character::IO::Export;
+use LLM::Character::Card;
+use LLM::Character::Lorebook;
+
+plan 25;
+
+# Import character with book
+my $json = slurp "t/fixtures/character_with_book.json";
+my $card = import-character-json($json);
+
+# Export to JSON
+my $exported = export-character-json($card);
+ok $exported.defined, 'Export produces output';
+
+my %parsed = from-json($exported);
+
+# Verify CCv3 envelope
+is %parsed<spec>, 'chara_card_v3', 'Correct spec';
+is %parsed<spec_version>, '3.0', 'Correct spec_version';
+ok %parsed<data>.defined, 'Has data key';
+
+# Verify character fields
+my %data = %parsed<data>;
+is %data<name>, 'Assistant', 'Correct name';
+is %data<description>, '{{char}} is a helpful assistant.', 'Correct description';
+is %data<first_mes>, 'How can I help?', 'Correct first_mes';
+is %data<personality>, '', 'Correct personality';
+is %data<scenario>, '', 'Correct scenario';
+is %data<mes_example>, '', 'Correct mes_example';
+is %data<creator_notes>, '', 'Correct creator_notes';
+is %data<system_prompt>, '', 'Correct system_prompt';
+is %data<post_history_instructions>, '', 'Correct post_history_instructions';
+is %data<tags>.elems, 0, 'Tags is empty array';
+is %data<alternate_greetings>.elems, 0, 'Alternate greetings is empty array';
+is %data<group_only_greetings>.elems, 0, 'Group only greetings is empty array';
+
+# Verify character_book
+ok %data<character_book>.defined, 'character_book present';
+is %data<character_book><entries>.elems, 1, 'One entry in character_book';
+is-deeply %data<character_book><entries>[0]<keys>, ['foo', 'bar'], 'Entry keys correct';
+is %data<character_book><entries>[0]<content>, 'some content', 'Entry content correct';
+
+# Verify assets
+is %data<assets>.elems, 1, 'One asset';
+is %data<assets>[0]<type>, 'image/png', 'Asset type correct';
+is %data<assets>[0]<uri>, './bla.png', 'Asset uri correct';
+
+# Verify extensions
+is %data<extensions><talkativeness>, '0.5', 'Extension preserved';
+
+# Round-trip: re-import exported JSON
+my $reimported = import-character-json($exported);
+is $reimported.name, $card.name, 'Round-trip preserves name';

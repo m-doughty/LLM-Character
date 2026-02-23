@@ -1,0 +1,65 @@
+use Test;
+use JSON::Fast;
+use LLM::Character;
+use LLM::Character::Card;
+use LLM::Character::Lorebook;
+
+plan 15;
+
+my $c = LLM::Character.new;
+
+# Import test data
+my $card = $c.import-character("t/fixtures/character_with_book.json");
+my $lorebook = $c.import-lorebook("t/fixtures/lorebook_valid.json");
+
+# Test export-character to JSON
+my $tmp-json = $*TMPDIR.add("test_char_{$*PID}.json").Str;
+lives-ok {
+	$c.export-character($card, $tmp-json);
+}, 'export-character to JSON succeeds';
+ok $tmp-json.IO.e, 'JSON file exists';
+
+my %parsed = from-json(slurp $tmp-json);
+is %parsed<spec>, 'chara_card_v3', 'Exported JSON has CCv3 spec';
+is %parsed<data><name>, 'Assistant', 'Exported JSON has correct name';
+
+# Re-import and verify
+my $reimported-card = $c.import-character($tmp-json);
+is $reimported-card.name, 'Assistant', 'Round-trip JSON character name matches';
+
+# Test export-character-to-png
+my $tmp-png = $*TMPDIR.add("test_char_{$*PID}.png").Str;
+lives-ok {
+	$c.export-character-to-png($card, "t/fixtures/Assistant.png", $tmp-png);
+}, 'export-character-to-png succeeds';
+ok $tmp-png.IO.e, 'PNG file exists';
+
+my $reimported-png = $c.import-character($tmp-png);
+is $reimported-png.name, 'Assistant', 'Round-trip PNG character name matches';
+
+# Test export-lorebook (CCv3 format)
+my $tmp-lb = $*TMPDIR.add("test_lb_{$*PID}.json").Str;
+lives-ok {
+	$c.export-lorebook($lorebook, $tmp-lb);
+}, 'export-lorebook ccv3 succeeds';
+ok $tmp-lb.IO.e, 'CCv3 lorebook file exists';
+
+my %lb = from-json(slurp $tmp-lb);
+is %lb<name>, 'Test Lorebook', 'CCv3 lorebook name correct';
+
+# Test export-lorebook (ST format)
+my $tmp-st = $*TMPDIR.add("test_st_{$*PID}.json").Str;
+lives-ok {
+	$c.export-lorebook($lorebook, $tmp-st, format => 'st');
+}, 'export-lorebook st succeeds';
+ok $tmp-st.IO.e, 'ST lorebook file exists';
+
+my %st = from-json(slurp $tmp-st);
+ok %st<entries> ~~ Hash, 'ST lorebook has Hash entries';
+is %st<entries><0><content>, 'some content', 'ST lorebook entry content correct';
+
+# Cleanup
+unlink $tmp-json if $tmp-json.IO.e;
+unlink $tmp-png  if $tmp-png.IO.e;
+unlink $tmp-lb   if $tmp-lb.IO.e;
+unlink $tmp-st   if $tmp-st.IO.e;

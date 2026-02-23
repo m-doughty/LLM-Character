@@ -1,0 +1,68 @@
+use Test;
+use JSON::Fast;
+use LLM::Character::IO::Import;
+use LLM::Character::IO::Export;
+use LLM::Character::Lorebook;
+use LLM::Character::Lorebook::Entry;
+
+plan 27;
+
+# Import lorebook
+my $json = slurp "t/fixtures/lorebook_valid.json";
+my $lorebook = import-lorebook-json($json);
+
+# Export to CCv3 JSON
+my $exported = export-lorebook-json($lorebook);
+ok $exported.defined, 'Export produces output';
+
+my %parsed = from-json($exported);
+
+# Verify lorebook fields
+is %parsed<name>, 'Test Lorebook', 'Correct name';
+is %parsed<description>, 'This is a test', 'Correct description';
+is %parsed<scan_depth>, 2, 'Correct scan_depth';
+is %parsed<token_budget>, 4096, 'Correct token_budget';
+ok %parsed<recursive_scanning>, 'Correct recursive_scanning';
+is %parsed<extensions><testString>, 'string', 'Extension testString preserved';
+nok %parsed<extensions><testBool>, 'Extension testBool preserved';
+is %parsed<extensions><testInt>, 16, 'Extension testInt preserved';
+
+# Verify entries
+is %parsed<entries>.elems, 1, 'One entry';
+my %e = %parsed<entries>[0];
+is-deeply %e<keys>, ['foo', 'bar'], 'Entry keys correct';
+is %e<content>, 'some content', 'Entry content correct';
+ok %e<enabled>, 'Entry enabled';
+is %e<insertion_order>, 2, 'Entry insertion_order correct';
+ok %e<case_sensitive>, 'Entry case_sensitive correct';
+nok %e<use_regex>, 'Entry use_regex correct';
+nok %e<constant>, 'Entry constant correct';
+is %e<name>, 'baz', 'Entry name correct';
+is %e<priority>, 1, 'Entry priority correct';
+is %e<id>, 0, 'Entry id correct';
+is %e<comment>, 'some comment', 'Entry comment correct';
+ok %e<selective>, 'Entry selective correct';
+is-deeply %e<secondary_keys>, ['baz'], 'Entry secondary_keys correct';
+is %e<position>, 'before_char', 'Entry position correct';
+
+# Decorator round-trip test
+my $entry-with-dec = LLM::Character::Lorebook::Entry.new(
+	keys       => ['test'],
+	content    => 'decorated content',
+	decorators => ['@@decorator1', '@@decorator2'],
+	enabled    => True,
+	insertion_order => 0,
+	use_regex  => False,
+);
+my $lb = LLM::Character::Lorebook.new(
+	name    => 'dec test',
+	entries => [$entry-with-dec],
+);
+my $dec-json = export-lorebook-json($lb);
+my %dec = from-json($dec-json);
+is %dec<entries>[0]<content>, "@@decorator1\n@@decorator2\ndecorated content", 'Decorators prepended to content';
+
+# Round-trip re-import
+my $reimported = import-lorebook-json($exported);
+is $reimported.name, $lorebook.name, 'Round-trip preserves name';
+is $reimported.entries[0].content, $lorebook.entries[0].content, 'Round-trip preserves entry content';

@@ -2,6 +2,10 @@ Revision history for LLM::Character
 
 {{$NEXT}}
 
+0.2.0  2026-02-23T03:03:31Z
+    - Add export-character & export-character-to-png functions
+    - Add export-lorebook function
+
 0.1.3  2025-07-10T03:00:19+01:00
     - Fix another bug with ST lorebooks always being selective
 

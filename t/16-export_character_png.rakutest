@@ -1,0 +1,48 @@
+use Test;
+use JSON::Fast;
+use LLM::Character::IO::Import;
+use LLM::Character::IO::Export;
+use LLM::Character::Card;
+
+plan 9;
+
+# Import character from enclosed JSON
+my $json = slurp "t/fixtures/character_enclosed.json";
+my $card = import-character-json($json);
+
+my $tmp = $*TMPDIR.add("test_export_{$*PID}.png").Str;
+
+# Export to PNG using Assistant.png as source
+lives-ok {
+	export-character-png($card, "t/fixtures/Assistant.png", $tmp);
+}, 'PNG export succeeds';
+
+ok $tmp.IO.e, 'Output PNG file exists';
+ok $tmp.IO.s > 0, 'Output PNG file is not empty';
+
+# Verify both tEXt chunks are present
+my ($ccv3-data, $chara-data);
+{
+	use Base64::Native;
+	use Image::PNG::Portable;
+	my $img = Image::PNG::Portable.new;
+	$img.read($tmp, True);
+	$ccv3-data = $img.get-text-meta('ccv3');
+	$chara-data = $img.get-text-meta('chara');
+}
+ok $ccv3-data.defined, 'ccv3 tEXt chunk present';
+ok $chara-data.defined, 'chara tEXt chunk present';
+
+# Re-import from temp PNG
+my $reimported = import-character-json(do {
+	use Base64::Native;
+	base64-decode($ccv3-data).decode;
+});
+
+isa-ok $reimported, LLM::Character::Card, 'Re-imported is a Card';
+is $reimported.name, 'Assistant', 'Round-trip preserves name';
+is $reimported.description, '{{char}} is a helpful assistant.', 'Round-trip preserves description';
+is $reimported.first_mes, 'How can I help?', 'Round-trip preserves first_mes';
+
+# Cleanup
+unlink $tmp if $tmp.IO.e;
