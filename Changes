@@ -2,6 +2,14 @@ Revision history for LLM::Character
 
 {{$NEXT}}
 
+0.2.1  2026-04-13T17:03:06+01:00
+    - IO::Import: when coercing a SillyTavern lorebook entry to CCv3,
+      promote `comment` into `name` if `name` is empty. ST has no
+      `name` field — the user-visible "memo" is stored in `comment`,
+      so without this promotion entries round-trip through CCv3 with
+      an empty name and nothing to display in UIs that use it. The
+      `comment` field is preserved unchanged.
+
 0.2.1  2026-02-23T04:03:54Z
     - Add export-character & export-character-to-png methods for exporting cards to JSON and PNG
     - Add export-lorebook method with CCv3 and SillyTavern format support

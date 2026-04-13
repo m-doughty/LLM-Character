@@ -185,6 +185,16 @@ sub _coerce-st-entry(%e --> LLM::Character::Lorebook::Entry) {
 		?? True
 		!! False;
 
+	# SillyTavern has no `name` field on entries — the user-visible
+	# "memo" is stored in `comment`. CCv3 has both, so when coercing an
+	# ST entry to CCv3 shape we promote comment→name if name is empty
+	# (keeping comment intact). Without this, round-tripping an ST
+	# lorebook through CCv3 produces entries that look unnamed
+	# everywhere the display uses `name`.
+	my Str $entry-name = %e<name>.defined && %e<name>.chars
+		?? %e<name>
+		!! (%e<comment> // '');
+
 	LLM::Character::Lorebook::Entry.new(
 		uuid            => uuid-v4,
 		keys            => %e<key> // [],
@@ -196,7 +206,7 @@ sub _coerce-st-entry(%e --> LLM::Character::Lorebook::Entry) {
 		insertion_order => %e<order> // 0,
 		use_regex       => %e<use_regex> // False,
 		constant        => %e<constant> // False,
-		name            => %e<name> // '',
+		name            => $entry-name,
 		id              => %e<uid> // %e<id>,
 		comment         => %e<comment> // '',
 		priority        => %e<priority> // 0,
