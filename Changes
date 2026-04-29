@@ -2,6 +2,9 @@ Revision history for LLM::Character
 
 {{$NEXT}}
 
+0.2.2  2026-04-29T23:45:59+01:00
+    - Bump Github actions to use node 24+
+
 0.2.1  2026-04-13T17:03:06+01:00
     - IO::Import: when coercing a SillyTavern lorebook entry to CCv3,
       promote `comment` into `name` if `name` is empty. ST has no

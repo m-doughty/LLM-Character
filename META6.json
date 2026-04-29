@@ -6,11 +6,11 @@
   "build-depends": [
   ],
   "depends": [
-    "Base64::Native",
-    "Image::PNG::Portable",
-    "JSON::Fast",
-    "RegexUtils",
-    "UUID::V4"
+    "Base64::Native:ver<0.0.9>:auth<zef:dwarring>",
+    "Image::PNG::Portable:auth<zef:apogee>",
+    "JSON::Fast:ver<0.19>:auth<cpan:TIMOTIMO>",
+    "RegexUtils:ver<0.1.5>:auth<zef:grizzlysmit>",
+    "UUID::V4:ver<1.0.0>:auth<zef:masukomi>"
   ],
   "description": "Import CCv3 character cards & import and match lorebooks.",
   "license": "Artistic-2.0",
@@ -36,5 +36,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.2.1"
+  "version": "0.2.2"
 }
