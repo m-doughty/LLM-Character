@@ -7,7 +7,7 @@
   ],
   "depends": [
     "Base64::Native:ver<0.0.9>:auth<zef:dwarring>",
-    "Image::PNG::Portable:auth<zef:apogee>",
+    "Image::PNG::Portable:ver<0.3.2+>:auth<zef:apogee>",
     "JSON::Fast:ver<0.19>:auth<cpan:TIMOTIMO>",
     "RegexUtils:ver<0.1.5>:auth<zef:grizzlysmit>",
     "UUID::V4:ver<1.0.0>:auth<zef:masukomi>"
@@ -36,5 +36,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.2.2"
+  "version": "0.2.3"
 }
