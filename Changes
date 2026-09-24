@@ -2,6 +2,15 @@ Revision history for LLM::Character
 
 {{$NEXT}}
 
+0.3.0  2026-09-24T19:51:11+01:00
+    - Lorebook::Matching: fix "Use of uninitialized value ... in string
+      context" warning when deduplicating matches for an entry built
+      without a `uuid` (e.g. constructed directly rather than via
+      `import-lorebook`). Falls back to the entry's object identity as
+      the dedup key, so such entries still match and dedup correctly
+      across recursion passes without colliding with other uuid-less
+      entries.
+
 0.2.3  2026-08-21T21:40:50+01:00
     - Pin Image::PNG::Portable
 
