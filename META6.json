@@ -7,9 +7,9 @@
   ],
   "depends": [
     "Base64::Native:ver<0.0.9>:auth<zef:dwarring>",
+    "ECMA262Regex:ver<1.2+>:auth<zef:raku-community-modules>",
     "Image::PNG::Portable:ver<0.3.2+>:auth<zef:apogee>",
     "JSON::Fast:ver<0.19>:auth<cpan:TIMOTIMO>",
-    "RegexUtils:ver<0.1.5>:auth<zef:grizzlysmit>",
     "UUID::V4:ver<1.0.0>:auth<zef:masukomi>"
   ],
   "description": "Import CCv3 character cards & import and match lorebooks.",

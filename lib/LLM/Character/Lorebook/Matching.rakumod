@@ -1,6 +1,6 @@
 unit class LLM::Character::Lorebook::Matching;
 
-use RegexUtils;
+use ECMA262Regex;
 
 use LLM::Character::Lorebook::Entry;
 use LLM::Character::Lorebook::Matching::Trie;
@@ -12,6 +12,27 @@ has LLM::Character::Lorebook::Matching::Trie  $.case_sensitive_selective;
 has LLM::Character::Lorebook::Matching::Trie  $.case_insensitive_selective;
 has LLM::Character::Lorebook::Matching::Regex @.regex_entries;
 has LLM::Character::Lorebook::Entry           @.constant_entries;
+
+# ECMA262Regex writes each literal as a \x escape, which :i does not fold,
+# so emit quoted literals instead.
+my class KeyRegexActions is ECMA262Regex::ToRakuRegex {
+	method pattern-character($/) {
+		make "'" ~ $/.Str.trans(["\\", "'"] => ["\\\\", "\\'"]) ~ "'";
+	}
+}
+
+# Lorebook regex keys are JavaScript regex literals such as /^bar/i.
+# A key without the slashes is taken as the bare pattern.
+sub compile-key-regex(Str $key --> Regex) {
+	my ($pattern, $flags) = $key ~~ /^ '/' (.+) '/' (<[a..z]>*) $/
+		?? (~$0, ~$1)
+		!! ($key, '');
+	my $match   = ECMA262Regex::Parser.parse($pattern, :actions(KeyRegexActions));
+	return Regex without $match;
+	my $adverb = $flags.contains('i') ?? ':i' !! '';
+	use MONKEY-SEE-NO-EVAL;
+	return (try EVAL "rx$adverb/{$match.made}/") // Regex;
+}
 
 method build-matcher(@entries, Bool :$default_cs = False) {
 	my $cs_trie  = LLM::Character::Lorebook::Matching::Trie.new(
@@ -39,17 +60,7 @@ method build-matcher(@entries, Bool :$default_cs = False) {
 
 		if $e.use_regex {
 			for $e.keys -> $key {
-				my @parts = $key.split("/", :skip-empty);
-				my $regex = @parts[0];
-				my $flags = @parts[1];
-				my $rx;
-				try {
-					$flags = RegexUtils.get-old-perl5-flags($flags) if $flags.defined;
-
-					$rx = $flags ?? 
-						RegexUtils.CreatePerlRegex($regex, $flags) !! 
-						RegexUtils.CreatePerlRegex($regex, "");
-				}
+				my $rx = compile-key-regex($key);
 				if $rx.defined {
 					@regex_entries.push: LLM::Character::Lorebook::Matching::Regex.new(
 						:regex($rx), :output($e)
