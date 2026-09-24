@@ -124,12 +124,12 @@ method match(Str $haystack, Int $recursion_depth = 99, Bool :$recursive_scanning
 			next if $entry.extensions<delay_until_recursion> && $pass == 0;
 			next if $entry.extensions<exclude_recursion> && $pass != 0;
 			if $to_match ~~ $rx.regex {
-				%this_pass{$entry.uuid} = $entry;
+				%this_pass{self!entry-key($entry)} = $entry;
 			}
 		}
 
 		for self.constant_entries -> $entry {
-			%this_pass{$entry.uuid} = $entry;
+			%this_pass{self!entry-key($entry)} = $entry;
 		}
 
 		my @new_matches = %this_pass.keys
@@ -139,7 +139,7 @@ method match(Str $haystack, Int $recursion_depth = 99, Bool :$recursive_scanning
 
 		last unless @new_matches.elems;
 
-		%matched{$_.uuid} = $_ for @new_matches;
+		%matched{self!entry-key($_)} = $_ for @new_matches;
 
 		$to_match = @new_matches.grep({ !$_.extensions<prevent_recursion> })
 			.map({ $_.content }).join("\n\n");
@@ -148,6 +148,17 @@ method match(Str $haystack, Int $recursion_depth = 99, Bool :$recursive_scanning
 	}
 
 	return %matched.values;
+}
+
+#|( Dedup key for an entry inside the matched-hash accumulators.
+	C<uuid> is normally always populated (every import path assigns
+	one), but entries built directly — e.g. a consumer editing one
+	in memory before persisting — may omit it. Falling back to
+	object identity keeps entries lacking a C<uuid> from colliding
+	with one another under the same key, while still deduping a
+	single such entry against itself across recursion passes. )
+method !entry-key(LLM::Character::Lorebook::Entry $entry) {
+	$entry.uuid // $entry.WHICH.Str;
 }
 
 method !trie-match(Int $pass, Str $to_match, %matched, LLM::Character::Lorebook::Matching::Node $root) {
@@ -161,7 +172,7 @@ method !trie-match(Int $pass, Str $to_match, %matched, LLM::Character::Lorebook:
 			next if $entry.extensions<delay_until_recursion> && $pass == 0;
 			next if $entry.extensions<exclude_recursion> && $pass != 0;
 
-			%matched{$entry.uuid} = $entry;
+			%matched{self!entry-key($entry)} = $entry;
 		}
 	}
 }

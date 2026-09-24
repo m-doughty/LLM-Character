@@ -94,6 +94,8 @@ Matches input against the specified entries.
 
 If $recursive_scanning is True, will continue to match against newly matched entries up to $recursion_depth times, or until there are no more matches.
 
+Matched entries are deduplicated by `uuid`. Entries built without a `uuid` (e.g. constructed directly by a consumer rather than via `import-lorebook`) still match and dedup correctly against themselves across recursion passes — the matcher falls back to the entry's object identity as the dedup key — but two distinct uuid-less entries are never conflated with one another.
+
 AUTHOR
 ======
 

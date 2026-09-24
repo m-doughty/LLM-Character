@@ -4,7 +4,7 @@ use LLM::Character::Lorebook::Matching;
 
 sub mkentry (*%opts) { LLM::Character::Lorebook::Entry.new(|%opts) }
 
-plan 12;
+plan 13;
 
 # 1. Basic single match
 subtest "Single keyword match" => {
@@ -131,5 +131,36 @@ subtest "Edge cases" => {
     $matcher = LLM::Character::Lorebook::Matching.build-matcher([$e4, $e5]);
     my @matches = $matcher.match("food");
     is-deeply @matches».uuid.sort, <4 5>, "Both 'foo' and 'food' matched";
+}
+
+# 13. Entries built without a uuid: no uninitialized-value warning, and no
+# false dedup/collision between distinct uuid-less entries.
+subtest "Entries missing uuid don't warn and don't collide" => {
+    my $warned = False;
+    my (@matches1, @matches2, @matches3);
+    {
+        CONTROL {
+            when CX::Warn { $warned = True; .resume }
+            default { .resume }
+        }
+
+        my $e1 = mkentry(:keys['cat'], :content('Cat!'), :case_sensitive(True), :enabled(True));
+        my $matcher1 = LLM::Character::Lorebook::Matching.build-matcher([$e1]);
+        @matches1 = $matcher1.match("the cat sat");
+
+        # Two distinct uuid-less entries must both surface, not collide.
+        my $e2 = mkentry(:keys['dog'], :content('Dog!'), :case_sensitive(True), :enabled(True));
+        my $matcher2 = LLM::Character::Lorebook::Matching.build-matcher([$e1, $e2]);
+        @matches2 = $matcher2.match("cat and dog");
+
+        # A single uuid-less entry recurring across passes must dedup once.
+        my $e3 = mkentry(:keys['bat'], :content('Bat!'), :case_sensitive(True), :enabled(True));
+        my $matcher3 = LLM::Character::Lorebook::Matching.build-matcher([$e3]);
+        @matches3 = $matcher3.match("bat", 3, :recursive_scanning(True));
+    }
+    nok $warned, "No uninitialized-value warning for a uuid-less entry";
+    is @matches1.elems, 1, "Uuid-less entry still matches";
+    is @matches2.elems, 2, "Two distinct uuid-less entries don't collide";
+    is @matches3.elems, 1, "Uuid-less entry dedups across recursion passes";
 }
 
