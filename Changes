@@ -2,6 +2,13 @@ Revision history for LLM::Character
 
 {{$NEXT}}
 
+0.3.1  2026-10-05T10:48:20+01:00
+
+    - Requires JSON::Fast 0.21.0 or later (zef:timo). 0.19 (cpan:TIMOTIMO)
+      fails its own tests under the RakuAST compiler frontend that Rakudo
+      2026.09 makes the default, so installing this distribution stopped
+      at that dependency.
+
 0.3.0  2026-09-24T19:51:11+01:00
     - Lorebook::Matching: fix "Use of uninitialized value ... in string
       context" warning when deduplicating matches for an entry built

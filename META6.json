@@ -9,7 +9,7 @@
     "Base64::Native:ver<0.0.9>:auth<zef:dwarring>",
     "ECMA262Regex:ver<1.2+>:auth<zef:raku-community-modules>",
     "Image::PNG::Portable:ver<0.3.2+>:auth<zef:apogee>",
-    "JSON::Fast:ver<0.19>:auth<cpan:TIMOTIMO>",
+    "JSON::Fast:ver<0.21.0+>:auth<zef:timo>",
     "UUID::V4:ver<1.0.0>:auth<zef:masukomi>"
   ],
   "description": "Import CCv3 character cards & import and match lorebooks.",
@@ -36,5 +36,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.3.0"
+  "version": "0.3.1"
 }
